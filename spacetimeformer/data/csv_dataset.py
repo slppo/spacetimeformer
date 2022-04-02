@@ -1,7 +1,9 @@
 import random
-from typing import List
+from typing import List, Union
 import os
 import tqdm
+
+import pdb
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -138,12 +140,14 @@ class CSVTimeSeries:
 class CSVTorchDset(Dataset):
     def __init__(
         self,
-        csv_time_series: CSVTimeSeries,
+        csv_time_series: Union[CSVTimeSeries, List[CSVTimeSeries]],
         split: str = "train",
         context_points: int = 128,
         target_points: int = 32,
         time_resolution: int = 1,
     ):
+        if not isinstance(csv_time_series, list):
+            csv_time_series = [csv_time_series]
         assert split in ["train", "val", "test"]
         self.split = split
         self.series = csv_time_series
@@ -152,19 +156,25 @@ class CSVTorchDset(Dataset):
         self.time_resolution = time_resolution
 
         self._slice_start_points = [
-            i
-            for i in range(
-                0,
-                self.series.length(split)
-                + time_resolution * (-target_points - context_points)
-                + 1,
-            )
+            [ 
+                i
+                for i in range(
+                    0,
+                    self.series[j].length(split)
+                    + time_resolution * (-target_points - context_points)
+                    + 1,
+                )
+            ] for j in range(len(self.series))
         ]
-        random.shuffle(self._slice_start_points)
+        for j in range(len(self._slice_start_points)):
+            random.shuffle(self._slice_start_points[j])
         self._slice_start_points = self._slice_start_points
 
     def __len__(self):
-        return len(self._slice_start_points)
+        n = 0
+        for slice_start_points in self._slice_start_points:
+            n += len(slice_start_points)
+        return n
 
     def _torch(self, *np_arrays):
         t = []
@@ -173,8 +183,12 @@ class CSVTorchDset(Dataset):
         return tuple(t)
 
     def __getitem__(self, i):
-        start = self._slice_start_points[i]
-        series_slice = self.series.get_slice(
+        specific_series = 0
+        while i >= len(self._slice_start_points[specific_series]):
+            i -= len(self._slice_start_points[specific_series])
+            specific_series += 1
+        start = self._slice_start_points[specific_series][i]
+        series_slice = self.series[specific_series].get_slice(
             self.split,
             start=start,
             stop=start
@@ -186,15 +200,22 @@ class CSVTorchDset(Dataset):
             series_slice.iloc[self.context_points :],
         )
         ctxt_x = ctxt_slice[
-            ctxt_slice.columns.difference(self.series.target_cols)
+            ctxt_slice.columns.difference(self.series[0].target_cols)
         ].values
-        ctxt_y = ctxt_slice[self.series.target_cols].values
+        ctxt_y = ctxt_slice[self.series[0].target_cols].values
 
         trgt_x = trgt_slice[
-            trgt_slice.columns.difference(self.series.target_cols)
+            trgt_slice.columns.difference(self.series[0].target_cols)
         ].values
-        trgt_y = trgt_slice[self.series.target_cols].values
+        trgt_y = trgt_slice[self.series[0].target_cols].values
 
+        #if ctxt_x.shape[0] == 0:
+        #    pdb.set_trace()
+
+        #print(f"ctxt_x: {ctxt_x.shape}")
+        #print(f"ctxt_y: {ctxt_y.shape}")
+        #print(f"trgt_x: {trgt_x.shape}")
+        #print(f"trgt_y: {trgt_y.shape}")
         return self._torch(ctxt_x, ctxt_y, trgt_x, trgt_y)
 
     @classmethod

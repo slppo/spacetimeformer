@@ -32,7 +32,7 @@ class DataModule(pl.LightningDataModule):
 
     @classmethod
     def add_cli(self, parser):
-        parser.add_argument("--batch_size", type=int, default=128)
+        parser.add_argument("--batch_size", type=int, default=32)
         parser.add_argument(
             "--workers",
             type=int,

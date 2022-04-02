@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from glob import glob
 import random
 import sys
 import warnings
@@ -22,6 +23,7 @@ _DSETS = [
     "toy1",
     "toy2",
     "solar_energy",
+    "tadpole"
 ]
 
 
@@ -110,6 +112,9 @@ def create_model(config):
     elif config.dset == "toy2":
         x_dim = 6
         y_dim = 20
+    elif config.dset == "tadpole":
+        x_dim = 7
+        y_dim = 2
 
     assert x_dim is not None
     assert y_dim is not None
@@ -288,10 +293,18 @@ def create_dset(config):
                 "New Zealand",
                 "Singapore",
             ]
-        dset = stf.data.CSVTimeSeries(
-            data_path=data_path,
-            target_cols=target_cols,
-        )
+        if config.dset != "tadpole":
+            dset = stf.data.CSVTimeSeries(
+                data_path=data_path,
+                target_cols=target_cols,
+            )
+        else:
+            dset = []
+            for file in glob("./data/tadpole/*"):
+                dset.append(stf.data.CSVTimeSeries(
+                    data_path=file,
+                    target_cols=["DX_cleaned_encoded"]
+                ))
         DATA_MODULE = stf.data.DataModule(
             datasetCls=stf.data.CSVTorchDset,
             dataset_kwargs={
@@ -303,8 +316,12 @@ def create_dset(config):
             batch_size=config.batch_size,
             workers=config.workers,
         )
-        INV_SCALER = dset.reverse_scaling
-        SCALER = dset.apply_scaling
+        if config.dset == "tadpole":
+            INV_SCALER = dset[0].reverse_scaling
+            SCALER = dset[0].apply_scaling
+        else:
+            INV_SCALER = dset.reverse_scaling
+            SCALER = dset.apply_scaling
         NULL_VAL = None
 
     return DATA_MODULE, INV_SCALER, SCALER, NULL_VAL

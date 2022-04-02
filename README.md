@@ -1,3 +1,9 @@
+Command line used to train on TADPOLE data:
+
+`python train.py spacetimeformer tadpole --run_name tadpole_test2 --d_model 100 --d_ff 400 --enc_layers 4 --dec_layers 4 --gpus 0 --batch_size 32 --start_token_len 2 --n_heads 4 --grad_clip_norm 1 --context_points 32 --target_points 4 --trials 1 --workers 2`
+
+~~~ORIGINAL README BELOW~~~
+
 # Spacetimeformer Multivariate Forecasting
 
 This repository contains the code for the paper, "**Long-Range Transformers for Dynamic Spatiotemporal Forecasting**", Grigsby, Wang and Qi, 2021. ([arXiv](https://arxiv.org/abs/2109.12218))

@@ -46,7 +46,7 @@ class Spacetimeformer_Forecaster(stf.Forecaster):
         l2_coeff: float = 0,
         loss: str = "nll",
         linear_window: int = 0,
-        class_loss_imp: float = 0.1,
+        class_loss_imp: float = 0,
         time_emb_dim: int = 6,
         null_value: float = None,
         verbose=True,
@@ -399,7 +399,7 @@ class Spacetimeformer_Forecaster(stf.Forecaster):
         parser.add_argument(
             "--class_loss_imp",
             type=float,
-            default=0.1,
+            default=0,
             help="Coefficient for node classification loss function. Set to 0 to disable this feature. Does not significantly impact forecasting results due to detached gradient.",
         )
         parser.add_argument(
