@@ -23,6 +23,8 @@ def _assert_squeeze(x):
 def plot(x_c, y_c, x_t, y_t, preds, conf=None):
     if y_c.shape[-1] > 1:
         idx = random.randrange(0, y_c.shape[-1])
+    else:
+        idx = 0
     y_c = y_c[..., idx]
     y_t = y_t[..., idx]
     preds = preds[..., idx]
@@ -68,7 +70,7 @@ class PredictionPlotterCallback(pl.Callback):
         self.log_to_wandb = log_to_wandb
         self.imgs = None
 
-    def on_validation_end(self, trainer, model):
+    def on_test_end(self, trainer, model):
         idxs = [random.sample(range(self.test_data[0].shape[0]), k=self.total_samples)]
         x_c, y_c, x_t, y_t = [i[idxs].detach().to(model.device) for i in self.test_data]
         with torch.no_grad():

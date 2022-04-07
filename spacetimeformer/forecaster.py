@@ -174,6 +174,7 @@ class Forecaster(pl.LightningModule, ABC):
         pred = self._inv_scaler(pred.detach().cpu().numpy())
         true = self._inv_scaler(true.detach().cpu().numpy())
         return {
+            "pe": stf.eval_stats._percentage_error(true, pred),
             "mape": stf.eval_stats.mape(true, pred),
             "mae": stf.eval_stats.mae(true, pred),
             "mse": stf.eval_stats.mse(true, pred),

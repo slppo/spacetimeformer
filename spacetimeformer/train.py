@@ -6,6 +6,7 @@ import warnings
 import os
 
 import pytorch_lightning as pl
+from spacetimeformer.spacetimeformer_model.spacetimeformer_model import Spacetimeformer_Forecaster
 import torch
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -177,7 +178,7 @@ def create_model(config):
             linear_window=config.linear_window,
         )
     elif config.model == "spacetimeformer":
-        forecaster = stf.spacetimeformer_model.Spacetimeformer_Forecaster(
+        forecaster = stf.spacetimeformer_model.Spacetimeformer_Forecaster.load_from_checkpoint(r"data\stf_model_checkpoints\tadpole_test2_486471160\tadpole_test2epoch=00-val\mse=0.57.ckpt",
             d_y=y_dim,
             d_x=x_dim,
             start_token_len=config.start_token_len,
@@ -370,8 +371,8 @@ def main(args):
     if args.wandb:
         import wandb
 
-        project = os.getenv("STF_WANDB_PROJ")
-        entity = os.getenv("STF_WANDB_ACCT")
+        project = os.getenv("STF_WANDB_PROJ", "spacetimeformer-test")
+        entity = os.getenv("STF_WANDB_ACCT", "toneill")
         log_dir = os.getenv("STF_LOG_DIR")
         if log_dir is None:
             log_dir = "./data/STF_LOG_DIR"
@@ -446,10 +447,10 @@ def main(args):
     )
 
     # Train
-    trainer.fit(forecaster, datamodule=data_module)
+    # trainer.fit(forecaster, datamodule=data_module)
 
     # Test
-    trainer.test(datamodule=data_module, ckpt_path="best")
+    trainer.test(model=forecaster, datamodule=data_module)
 
     if args.wandb:
         experiment.finish()
